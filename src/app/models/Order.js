@@ -3,14 +3,13 @@ import mongoose from 'mongoose';
 const OrderSchema = new mongoose.Schema({
     code: {
         type: String,
-        required: [true, 'Please provide order code'],
+        required: false,
         unique: false,
-        uppercase: true,
-        match: [/^[A-Z0-9]+$/, 'Order code must contain only uppercase letters and numbers'],
+        uppercase: true
     },
     firstName: {
         type: String,
-        required: [true, 'Please provide first name'],
+        required: false,
         maxlength: [50, 'First name cannot be more than 50 characters'],
     },
     lastName: {
@@ -31,13 +30,12 @@ const OrderSchema = new mongoose.Schema({
     },
     numberKilos: {
         type: Number,
-        required: [true, 'Please provide number of kilos'],
-        min: [0.1, 'Minimum weight is 0.1kg'],
+        required: false,
         max: [100, 'Maximum weight is 100kg'],
     },
     price: {
         type: Number,
-        required: [true, 'Please provide price'],
+        required: false,
         min: [0, 'Price cannot be negative'],
     },
     downPayment: {

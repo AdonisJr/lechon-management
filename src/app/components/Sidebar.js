@@ -18,7 +18,7 @@ export default function Sidebar({ isOpen, onToggle }) {
             {/* Mobile backdrop */}
             {isOpen && (
                 <div
-                    className="fixed inset-0 z-40 bg-black bg-opacity-50 md:hidden"
+                    className="fixed inset-0 z-40 bg-black/60 bg-opacity-50 md:hidden"
                     onClick={onToggle}
                 ></div>
             )}

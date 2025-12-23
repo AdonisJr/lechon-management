@@ -52,15 +52,15 @@ api.interceptors.response.use(
 
 // Orders API
 export const ordersAPI = {
-  // Get all orders with optional filters
-  getAll: (filters = {}) => {
-    const params = new URLSearchParams();
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value && value.toString().trim() !== '') {
-        params.append(key, value.toString().trim());
+  // Get all orders with optional filters and pagination
+  getAll: (params = {}) => {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && value.toString().trim() !== '') {
+        queryParams.append(key, value.toString().trim());
       }
     });
-    const queryString = params.toString();
+    const queryString = queryParams.toString();
     return api.get(queryString ? `/api/orders?${queryString}` : '/api/orders');
   },
 

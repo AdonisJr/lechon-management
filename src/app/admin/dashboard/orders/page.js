@@ -22,6 +22,16 @@ export default function LechonOrders() {
         dateCooked: '',
         timeCooked: ''
     });
+    const [pagination, setPagination] = useState({
+        currentPage: 1,
+        itemsPerPage: 30,
+        totalItems: 0,
+        totalPages: 0
+    });
+    const [sorting, setSorting] = useState({
+        field: 'timeCooked',
+        direction: 'asc'
+    });
     const [formData, setFormData] = useState({
         code: '',
         firstName: '',
@@ -51,6 +61,13 @@ export default function LechonOrders() {
         checkAuthentication();
     }, [router]);
 
+    // Refetch orders when pagination or sorting changes
+    useEffect(() => {
+        if (!loading) {
+            fetchOrders();
+        }
+    }, [pagination.currentPage, pagination.itemsPerPage, sorting.field, sorting.direction]);
+
     const handleFilterChange = (field, value) => {
         setFilters(prev => ({
             ...prev,
@@ -59,6 +76,7 @@ export default function LechonOrders() {
     };
 
     const applyFilters = () => {
+        setPagination(prev => ({ ...prev, currentPage: 1 }));
         fetchOrders();
     };
 
@@ -72,13 +90,45 @@ export default function LechonOrders() {
             dateCooked: '',
             timeCooked: ''
         });
+        setPagination(prev => ({ ...prev, currentPage: 1 }));
         fetchOrders();
+    };
+
+    const handlePageChange = (newPage) => {
+        setPagination(prev => ({ ...prev, currentPage: newPage }));
+    };
+
+    const handleItemsPerPageChange = (newItemsPerPage) => {
+        setPagination(prev => ({ 
+            ...prev, 
+            itemsPerPage: newItemsPerPage,
+            currentPage: 1 // Reset to first page when changing items per page
+        }));
+    };
+
+    const handleSort = (field) => {
+        setSorting(prev => ({
+            field,
+            direction: prev.field === field && prev.direction === 'asc' ? 'desc' : 'asc'
+        }));
+        setPagination(prev => ({ ...prev, currentPage: 1 })); // Reset to first page when sorting
     };
 
     const fetchOrders = async () => {
         try {
-            const response = await ordersAPI.getAll(filters);
+            const response = await ordersAPI.getAll({
+                ...filters,
+                page: pagination.currentPage,
+                limit: pagination.itemsPerPage,
+                sortField: sorting.field,
+                sortDirection: sorting.direction
+            });
             setOrders(response.data.orders);
+            setPagination(prev => ({
+                ...prev,
+                totalItems: response.data.pagination.totalItems,
+                totalPages: response.data.pagination.totalPages
+            }));
         } catch (error) {
             console.error('Error fetching orders:', error);
         }
@@ -163,6 +213,29 @@ export default function LechonOrders() {
             style: 'currency',
             currency: 'PHP'
         }).format(amount);
+    };
+
+    const SortableHeader = ({ field, children, className = "" }) => {
+        const isActive = sorting.field === field;
+        const direction = isActive ? sorting.direction : null;
+        
+        return (
+            <th 
+                className={`px-2 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none ${className}`}
+                onClick={() => handleSort(field)}
+            >
+                <div className="flex items-center gap-1">
+                    {children}
+                    <span className="ml-1">
+                        {isActive ? (
+                            direction === 'asc' ? '↑' : '↓'
+                        ) : (
+                            <span className="text-gray-300">↕</span>
+                        )}
+                    </span>
+                </div>
+            </th>
+        );
     };
 
     if (loading) {
@@ -324,16 +397,16 @@ export default function LechonOrders() {
                                     <thead className="bg-gray-50">
                                         <tr>
                                             <th className="px-2 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                            <th className="px-2 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
-                                            <th className="px-2 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                                            <th className="px-2 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                            <th className="px-2 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order</th>
-                                            <th className="px-2 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kilos</th>
-                                            <th className="px-2 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                                            <SortableHeader field="code">Code</SortableHeader>
+                                            <SortableHeader field="firstName">Customer</SortableHeader>
+                                            <SortableHeader field="type">Type</SortableHeader>
+                                            <SortableHeader field="typeOrder">Order</SortableHeader>
+                                            <SortableHeader field="numberKilos">Kilos</SortableHeader>
+                                            <SortableHeader field="price">Price</SortableHeader>
                                             <th className="px-2 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
-                                            <th className="px-2 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cooked Date</th>
-                                            <th className="px-2 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cooked Time</th>
-                                            <th className="px-2 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                            <SortableHeader field="dateCooked">Cooked Date</SortableHeader>
+                                            <SortableHeader field="timeCooked">Cooked Time</SortableHeader>
+                                            <SortableHeader field="status">Status</SortableHeader>
                                             <th className="px-2 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                         </tr>
                                     </thead>
@@ -341,16 +414,16 @@ export default function LechonOrders() {
                                         {orders.map((order) => (
                                             <tr key={order._id} className="hover:bg-gray-50">
                                                 <td className="px-2 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs font-medium text-gray-900">{order._id.slice(-6)}</td>
-                                                <td className="px-2 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs font-mono text-gray-900">{order.code}</td>
+                                                <td className="px-2 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs font-mono text-gray-900">{order.code || '__'}</td>
                                                 <td className="px-2 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs text-gray-900">
-                                                    {order.firstName} {order.lastName}
+                                                    {order.firstName || '__'} {order.lastName}
                                                 </td>
                                                 <td className="px-2 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs text-gray-900 capitalize">
                                                     {order.type.replace('_', ' ')}
                                                 </td>
                                                 <td className="px-2 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs text-gray-900 capitalize">{order.typeOrder}</td>
-                                                <td className="px-2 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs text-gray-900">{order.numberKilos}kg</td>
-                                                <td className="px-2 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs text-gray-900">{formatCurrency(order.price)}</td>
+                                                <td className="px-2 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs text-gray-900">{order.numberKilos}{ order.numberKilos ? 'kg' : '__'}</td>
+                                                <td className="px-2 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs text-gray-900">{order.price ? formatCurrency(order.price) : '__'}</td>
                                                 <td className="px-2 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs text-gray-900">
                                                     <div className="space-y-1">
                                                         <div className={order.isPaid ? 'text-green-600' : 'text-red-600'}>
@@ -403,9 +476,85 @@ export default function LechonOrders() {
                             )}
                         </div>
 
+                        {/* Pagination */}
+                        {pagination.totalItems > 0 && (
+                            <div className="bg-white rounded-lg shadow-md p-4 mt-4">
+                                <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                                    {/* Items per page selector */}
+                                    <div className="flex items-center gap-2">
+                                        <label className="text-sm font-medium text-gray-700">Items per page:</label>
+                                        <select
+                                            value={pagination.itemsPerPage}
+                                            onChange={(e) => handleItemsPerPageChange(parseInt(e.target.value))}
+                                            className="border border-gray-300 rounded-md px-3 py-1 text-sm"
+                                        >
+                                            <option value={10}>10</option>
+                                            <option value={20}>20</option>
+                                            <option value={30}>30</option>
+                                            <option value={50}>50</option>
+                                        </select>
+                                    </div>
+
+                                    {/* Total items info */}
+                                    <div className="text-sm text-gray-600">
+                                        Showing {Math.min((pagination.currentPage - 1) * pagination.itemsPerPage + 1, pagination.totalItems)} to {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)} of {pagination.totalItems} orders
+                                    </div>
+
+                                    {/* Page navigation */}
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => handlePageChange(pagination.currentPage - 1)}
+                                            disabled={pagination.currentPage === 1}
+                                            className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                        >
+                                            Previous
+                                        </button>
+
+                                        {/* Page numbers */}
+                                        <div className="flex gap-1">
+                                            {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                                                let pageNum;
+                                                if (pagination.totalPages <= 5) {
+                                                    pageNum = i + 1;
+                                                } else if (pagination.currentPage <= 3) {
+                                                    pageNum = i + 1;
+                                                } else if (pagination.currentPage >= pagination.totalPages - 2) {
+                                                    pageNum = pagination.totalPages - 4 + i;
+                                                } else {
+                                                    pageNum = pagination.currentPage - 2 + i;
+                                                }
+
+                                                return (
+                                                    <button
+                                                        key={pageNum}
+                                                        onClick={() => handlePageChange(pageNum)}
+                                                        className={`px-3 py-1 border rounded-md text-sm ${
+                                                            pagination.currentPage === pageNum
+                                                                ? 'bg-blue-600 text-white border-blue-600'
+                                                                : 'border-gray-300 hover:bg-gray-50'
+                                                        }`}
+                                                    >
+                                                        {pageNum}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+
+                                        <button
+                                            onClick={() => handlePageChange(pagination.currentPage + 1)}
+                                            disabled={pagination.currentPage === pagination.totalPages}
+                                            className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                        >
+                                            Next
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Order Form Modal */}
                         {showForm && (
-                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
                                 <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                                     <div className="flex justify-between items-center mb-6">
                                         <h2 className="text-xl font-bold">
