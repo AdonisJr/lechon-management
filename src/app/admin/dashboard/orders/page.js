@@ -318,8 +318,8 @@ export default function LechonOrders() {
                         </div>
 
                         {/* Orders Table */}
-                        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-                            <div className="overflow-x-auto scrollbar-hide">
+                        <div className="bg-white rounded-lg shadow-md">
+                            <div className="overflow-x-auto">
                                 <table className="min-w-full divide-y divide-gray-200">
                                     <thead className="bg-gray-50">
                                         <tr>
@@ -331,8 +331,8 @@ export default function LechonOrders() {
                                             <th className="px-2 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kilos</th>
                                             <th className="px-2 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
                                             <th className="px-2 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
-                                            <th className="px-2 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Cooked Date</th>
-                                            <th className="px-2 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Cooked Time</th>
+                                            <th className="px-2 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cooked Date</th>
+                                            <th className="px-2 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Cooked Time</th>
                                             <th className="px-2 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                             <th className="px-2 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                         </tr>
@@ -364,8 +364,8 @@ export default function LechonOrders() {
                                                     </div>
                                                 </td>
 
-                                                <td className="px-2 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs text-gray-900 hidden sm:table-cell">{formatDateLong(order.dateCooked)}</td>
-                                                <td className="px-2 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs text-gray-900 hidden md:table-cell">{formatTime12Hour(order.timeCooked)}</td>
+                                                <td className="px-2 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs text-gray-900">{formatDateLong(order.dateCooked)}</td>
+                                                <td className="px-2 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs text-gray-900 hidden sm:table-cell">{formatTime12Hour(order.timeCooked)}</td>
                                                 <td className="px-2 sm:px-4 lg:px-6 py-4 whitespace-nowrap">
                                                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${order.status === 'delivered' ? 'bg-green-100 text-green-800' :
                                                         order.status === 'ready' ? 'bg-blue-100 text-blue-800' :
