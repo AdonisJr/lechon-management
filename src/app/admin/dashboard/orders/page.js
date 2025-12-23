@@ -425,7 +425,6 @@ export default function LechonOrders() {
                                                 <label className="block text-xs font-medium text-gray-700">Order Code</label>
                                                 <input
                                                     type="text"
-                                                    required
                                                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
                                                     value={formData.code}
                                                     onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
@@ -448,7 +447,6 @@ export default function LechonOrders() {
                                                 <label className="block text-xs font-medium text-gray-700">First Name</label>
                                                 <input
                                                     type="text"
-                                                    required
                                                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
                                                     value={formData.firstName}
                                                     onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
@@ -483,7 +481,6 @@ export default function LechonOrders() {
                                                 <input
                                                     type="number"
                                                     step="0.1"
-                                                    required
                                                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
                                                     value={formData.numberKilos}
                                                     onChange={(e) => setFormData({ ...formData, numberKilos: e.target.value })}
@@ -494,7 +491,6 @@ export default function LechonOrders() {
                                                 <input
                                                     type="number"
                                                     step="0.01"
-                                                    required
                                                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
                                                     value={formData.price}
                                                     onChange={(e) => setFormData({ ...formData, price: e.target.value })}
