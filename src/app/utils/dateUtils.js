@@ -117,3 +117,15 @@ export const formatDuration = (startTime) => {
 
     return `${hours} hr : ${minutes} min : ${seconds} sec`;
 };
+
+export const computeCookingDuration = (start, end = null) => {
+    const startTime = new Date(start);
+    const endTime = end ? new Date(end) : new Date();
+    const diff = Math.floor((endTime - startTime) / 1000); // total seconds
+
+    const hours = Math.floor(diff / 3600);
+    const minutes = Math.floor((diff % 3600) / 60);
+    const seconds = diff % 60;
+
+    return `${hours}hr: ${minutes}min: ${seconds}sec`;
+};

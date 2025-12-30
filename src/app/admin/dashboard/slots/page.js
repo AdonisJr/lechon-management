@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Sidebar from '@/app/components/Sidebar';
 import { requireAuth } from '@/app/utils/auth';
 import { lechonSlotsAPI } from '@/app/utils/apiServices';
-import { formatDateLong, formatTime12Hour, formatDuration } from '@/app/utils/dateUtils';
+import { formatDateLong, formatTime12Hour, formatDuration, computeCookingDuration } from '@/app/utils/dateUtils';
 import {
     FaFire,
     FaEdit,
@@ -44,6 +44,9 @@ export default function LechonSlots() {
         type: 'multi_purpose',
         notes: ''
     });
+    const [historyModalOpen, setHistoryModalOpen] = useState(false);
+    const [historyData, setHistoryData] = useState([]);
+    const [historySlotName, setHistorySlotName] = useState('');
     const router = useRouter();
 
     const [, forceUpdate] = useState(0);
@@ -119,6 +122,7 @@ export default function LechonSlots() {
                 sortDirection: sorting.direction
             });
             setSlots(response.data.slots);
+            console.log(response.data.slots);
             setPagination(prev => ({
                 ...prev,
                 totalItems: response.data.pagination.totalItems,
@@ -235,6 +239,13 @@ export default function LechonSlots() {
         const interval = setInterval(() => forceUpdate(prev => prev + 1), 1000);
         return () => clearInterval(interval);
     }, []);
+
+    const handleViewHistory = (slot) => {
+        setHistoryData(slot.history || []);
+        setHistorySlotName(slot.name);
+        setHistoryModalOpen(true);
+    };
+
 
     if (loading) {
         return (
@@ -436,6 +447,15 @@ export default function LechonSlots() {
                                             >
                                                 ✕
                                             </button>
+
+                                            <button
+                                                onClick={() => handleViewHistory(slot)}
+                                                className="p-2 rounded-lg text-gray-600 hover:bg-gray-50 cursor-pointer"
+                                                title="View History"
+                                            >
+                                                📜
+                                            </button>
+
                                             <button
                                                 onClick={() => handleEdit(slot)}
                                                 className="p-2 rounded-lg text-blue-600 hover:bg-blue-50 cursor-pointer"
@@ -456,6 +476,59 @@ export default function LechonSlots() {
                             })}
                         </div>
 
+                        {/* History Modal */}
+                        {historyModalOpen && (
+                            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+                                <div className="bg-white rounded-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h2 className="text-xl font-bold">History - {historySlotName}</h2>
+                                        <button
+                                            onClick={() => setHistoryModalOpen(false)}
+                                            className="text-gray-500 hover:text-gray-700"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+
+                                    {historyData.length > 0 ? (
+                                        <ul className="space-y-2">
+                                            {historyData
+                                                .sort((a, b) => new Date(b.startCooking) - new Date(a.startCooking))
+                                                .map((h, index) => {
+                                                    const order = h.orderId; // now a full populated order object
+                                                    const endCooking = h.endCooking ? new Date(h.endCooking) : null;
+                                                    const startCooking = h.startCooking ? new Date(h.startCooking) : null;
+
+                                                    // compute duration if endCooking exists, else show elapsed live
+                                                    const duration = startCooking
+                                                        ? endCooking
+                                                            ? `${Math.floor((endCooking - startCooking) / 1000 / 60)}m ${Math.floor((endCooking - startCooking) / 1000) % 60}s`
+                                                            : `${Math.floor((Date.now() - startCooking) / 1000 / 60)}m ${Math.floor((Date.now() - startCooking) / 1000) % 60}s`
+                                                        : '--';
+
+                                                    return (
+                                                        <li key={index} className="border rounded-lg p-2 bg-gray-50">
+                                                            <div className="text-xs text-gray-500">Order ID: {order?._id?.slice(-6) || '--'}</div>
+                                                            <div>Customer: {order ? `${order.lastName}, ${order.firstName}` : '--'}</div>
+                                                            <div>Code: {order?.code || '--'}</div>
+                                                            <div>Kilos: {order?.kilos ?? '--'}</div>
+                                                            <div>Status: <span className="capitalize">{order.status}</span></div>
+                                                            <div>Start Cooking: {startCooking ? startCooking.toLocaleString() : '--'}</div>
+                                                            <div>End Cooking: {endCooking ? endCooking.toLocaleString() : '--'}</div>
+                                                            <div>Elapsed: {duration}</div>
+                                                            <div>Notes: {h.notes || '--'}</div>
+                                                        </li>
+                                                    );
+                                                })}
+                                        </ul>
+                                    ) : (
+                                        <p className="text-gray-500 text-center">No history available for this slot.</p>
+                                    )}
+
+
+                                </div>
+                            </div>
+                        )}
 
                         {/* Pagination */}
                         {pagination.totalItems > 0 && (

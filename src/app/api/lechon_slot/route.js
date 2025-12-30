@@ -55,7 +55,14 @@ export async function GET(request) {
         const totalSlots = await LechonSlot.countDocuments(filter);
         const slots = await LechonSlot.find(filter)
             .populate('currentOrders', '_id firstName lastName code status dateCooked timeCooked kilos')
-            .populate('history', 'orderId startCooking endCooking')
+            .populate({
+                path: 'history',
+                select: 'startCooking endCooking notes',
+                populate: {
+                    path: 'orderId', // the field inside history that references Order
+                    select: '_id firstName lastName code status dateCooked timeCooked kilos'
+                }
+            })
             .sort({ [sortField]: sortDirection })
             .skip(skip)
             .limit(limit);
