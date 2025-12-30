@@ -63,7 +63,7 @@ export async function GET(request) {
                     select: '_id firstName lastName code status dateCooked timeCooked kilos'
                 }
             })
-            .sort({ [sortField]: sortDirection })
+            .sort({ createdAt: 1 }) // Sort by newest first
             .skip(skip)
             .limit(limit);
 
