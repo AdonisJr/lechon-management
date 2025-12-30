@@ -4,10 +4,11 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/app/components/Sidebar';
 import { requireAuth } from '@/app/utils/auth';
-import { ordersAPI } from '@/app/utils/apiServices';
+import { ordersAPI, lechonSlotsAPI } from '@/app/utils/apiServices';
 import { formatDateLong, formatTime12Hour, formatDateTime, getCurrentDateFormatted, getCurrentTimeFormatted } from '@/app/utils/dateUtils';
 
 export default function LechonOrders() {
+    const today = new Date().toISOString().split('T')[0];
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [loading, setLoading] = useState(true);
     const [orders, setOrders] = useState([]);
@@ -19,7 +20,7 @@ export default function LechonOrders() {
         typeOrder: '',
         type: '',
         status: '',
-        dateCooked: '',
+        dateCooked: today,
         timeCooked: ''
     });
     const [pagination, setPagination] = useState({
@@ -32,6 +33,9 @@ export default function LechonOrders() {
         field: 'timeCooked',
         direction: 'asc'
     });
+    const [availableSlots, setAvailableSlots] = useState([]);
+    const [showSlotAssignment, setShowSlotAssignment] = useState(false);
+    const [selectedOrderForSlot, setSelectedOrderForSlot] = useState(null);
     const [formData, setFormData] = useState({
         code: '',
         firstName: '',
@@ -87,7 +91,7 @@ export default function LechonOrders() {
             typeOrder: '',
             type: '',
             status: '',
-            dateCooked: '',
+            dateCooked: today,
             timeCooked: ''
         });
         setPagination(prev => ({ ...prev, currentPage: 1 }));
@@ -201,11 +205,60 @@ export default function LechonOrders() {
             price: '',
             downPayment: '',
             isPaid: false,
-            dateCooked: '',
+            dateCooked: today,
             timeCooked: '',
             specialInstructions: '',
             status: 'pending'
         });
+    };
+
+    const fetchAvailableSlots = async () => {
+        try {
+            const response = await lechonSlotsAPI.getAll({
+                status: 'available'
+            });
+            // Calculate available capacity for each slot
+            const slotsWithCapacity = response.data.slots.map(slot => ({
+                ...slot,
+                availableCapacity: Math.max(0, slot.capacity - (slot.currentOrders?.length || 0))
+            }));
+            setAvailableSlots(slotsWithCapacity);
+        } catch (error) {
+            console.error('Error fetching available slots:', error);
+            setAvailableSlots([]);
+        }
+    };
+
+    const handleAssignSlot = (order) => {
+        setSelectedOrderForSlot(order);
+        fetchAvailableSlots();
+        setShowSlotAssignment(true);
+    };
+
+    const handleSlotAssignment = async (slotId) => {
+        if (!selectedOrderForSlot || !slotId) return;
+
+        try {
+            await lechonSlotsAPI.assignOrder(slotId, selectedOrderForSlot._id);
+            setShowSlotAssignment(false);
+            setSelectedOrderForSlot(null);
+            fetchOrders();
+        } catch (error) {
+            console.error('Error assigning slot:', error);
+            alert(error.response?.data?.error || 'Error assigning slot');
+        }
+    };
+
+    const handleUnassignSlot = async (orderId) => {
+        if (!confirm('Are you sure you want to unassign this order from its slot?')) return;
+
+        try {
+            await lechonSlotsAPI.unassignOrder(orderId);
+            fetchOrders();
+        } catch (error) {
+            console.error('Error unassigning slot:', error);
+            alert(error.response?.data?.error || 'Error unassigning slot');
+        }
     };
 
     const formatCurrency = (amount) => {
@@ -407,6 +460,7 @@ export default function LechonOrders() {
                                             <SortableHeader field="dateCooked">Cooked Date</SortableHeader>
                                             <SortableHeader field="timeCooked">Cooked Time</SortableHeader>
                                             <SortableHeader field="status">Status</SortableHeader>
+                                            <th className="px-2 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Slot</th>
                                             <th className="px-2 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                         </tr>
                                     </thead>
@@ -449,6 +503,27 @@ export default function LechonOrders() {
                                                         }`}>
                                                         {order.status}
                                                     </span>
+                                                </td>
+                                                <td className="px-2 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs text-gray-900">
+                                                    {order.slotId ? (
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="font-medium">{order.slotId.name || `Slot ${order.slotId._id.slice(-4)}`}</span>
+                                                            <button
+                                                                onClick={() => handleUnassignSlot(order._id)}
+                                                                className="ml-2 text-xs text-red-600 hover:text-red-800"
+                                                                title="Unassign from slot"
+                                                            >
+                                                                ✕
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => handleAssignSlot(order)}
+                                                            className="text-blue-600 hover:text-blue-800 text-xs"
+                                                        >
+                                                            Assign Slot
+                                                        </button>
+                                                    )}
                                                 </td>
                                                 <td className="px-2 sm:px-4 lg:px-6 py-4 whitespace-nowrap text-xs font-medium space-x-2">
                                                     <button
@@ -730,6 +805,66 @@ export default function LechonOrders() {
                                             </button>
                                         </div>
                                     </form>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Slot Assignment Modal */}
+                        {showSlotAssignment && selectedOrderForSlot && (
+                            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+                                <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h2 className="text-xl font-bold">
+                                            Assign Slot to Order
+                                        </h2>
+                                        <button
+                                            onClick={() => setShowSlotAssignment(false)}
+                                            className="text-gray-500 hover:text-gray-700"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+
+                                    <div className="mb-4">
+                                        <h3 className="font-medium text-gray-900">Order Details:</h3>
+                                        <p className="text-sm text-gray-600">
+                                            {selectedOrderForSlot.firstName} {selectedOrderForSlot.lastName} - {selectedOrderForSlot.type.replace('_', ' ')} ({selectedOrderForSlot.numberKilos}kg)
+                                        </p>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <h3 className="font-medium text-gray-900">Available Slots:</h3>
+                                        {availableSlots.length > 0 ? (
+                                            availableSlots.map((slot) => (
+                                                <div key={slot._id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                                                    <div>
+                                                        <div className="font-medium">{slot.name}</div>
+                                                        <div className="text-sm text-gray-600">
+                                                            Type: {slot.type.replace('_', ' ')} | Capacity: {slot.availableCapacity}/{slot.capacity}
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => handleSlotAssignment(slot._id)}
+                                                        className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                                                    >
+                                                        Assign
+                                                    </button>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <p className="text-gray-500 text-sm">No available slots found.</p>
+                                        )}
+                                    </div>
+
+                                    <div className="flex justify-end pt-4">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowSlotAssignment(false)}
+                                            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         )}

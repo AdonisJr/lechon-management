@@ -95,6 +95,39 @@ export const usersAPI = {
   delete: (id) => api.delete(`/api/users/${id}`),
 };
 
+// Lechon Slots API
+export const lechonSlotsAPI = {
+  // Get all slots with optional filters and pagination
+  getAll: (params = {}) => {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && value.toString().trim() !== '') {
+        queryParams.append(key, value.toString().trim());
+      }
+    });
+    const queryString = queryParams.toString();
+    return api.get(queryString ? `/api/lechon_slot?${queryString}` : '/api/lechon_slot');
+  },
+
+  // Get single slot
+  getById: (id) => api.get(`/api/lechon_slot/${id}`),
+
+  // Create new slot
+  create: (slotData) => api.post('/api/lechon_slot', slotData),
+
+  // Update slot
+  update: (id, slotData) => api.put(`/api/lechon_slot/${id}`, slotData),
+
+  // Delete slot
+  delete: (id) => api.delete(`/api/lechon_slot/${id}`),
+
+  // Assign order to slot
+  assignOrder: (slotId, orderId) => api.post('/api/lechon_slot/assign', { slotId, orderId }),
+
+  // Unassign order from slot
+  unassignOrder: (orderId) => api.delete(`/api/lechon_slot/assign?orderId=${orderId}`),
+};
+
 // Auth API
 export const authAPI = {
   // Login

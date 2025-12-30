@@ -74,6 +74,11 @@ const OrderSchema = new mongoose.Schema({
         enum: ['pending', 'confirmed', 'preparing', 'cooking', 'packed', 'picked_up', 'ready', 'delivered', 'cancelled'],
         default: 'pending',
     },
+    slotId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'LechonSlot',
+        default: null,
+    },
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
@@ -112,11 +117,11 @@ OrderSchema.virtual('fullName').get(function () {
 
 // Virtual for formatted dates
 OrderSchema.virtual('formattedDateReceived').get(function () {
-    return this.dateReceived.toLocaleDateString();
+    return this.dateReceived ? this.dateReceived.toLocaleDateString() : null;
 });
 
 OrderSchema.virtual('formattedDateCooked').get(function () {
-    return this.dateCooked.toLocaleDateString();
+    return this.dateCooked ? this.dateCooked.toLocaleDateString() : null;
 });
 
 // Ensure virtual fields are serialized

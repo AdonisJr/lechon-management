@@ -68,6 +68,15 @@ export default function Sidebar({ isOpen, onToggle }) {
                                 Lechon Orders
                             </button>
                         </Link>
+                        <Link href="/admin/dashboard/slots">
+                            <button
+                                className={`w-full text-left mt-2 py-3 px-4 rounded-lg hover:bg-gray-700 transition-colors duration-200 flex items-center cursor-pointer ${pathname === '/admin/dashboard/slots' ? 'bg-gray-700' : ''
+                                    }`}
+                            >
+                                <span className="mr-3">⏰</span>
+                                Cooking Slots
+                            </button>
+                        </Link>
                         <Link href="/admin/dashboard/users">
                             <button
                                 className={`w-full text-left mt-2 py-3 px-4 rounded-lg hover:bg-gray-700 transition-colors duration-200 flex items-center cursor-pointer ${pathname === '/admin/dashboard/users' ? 'bg-gray-700' : ''

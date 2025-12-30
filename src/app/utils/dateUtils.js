@@ -99,3 +99,21 @@ export const getCurrentTimeFormatted = () => {
   const timeString = now.toTimeString().slice(0, 5);
   return formatTime12Hour(timeString);
 };
+
+export const formatDuration = (startTime) => {
+    if (!startTime) return '--';
+
+    const start = new Date(startTime);
+    const now = new Date();
+    let diff = Math.max(0, now - start); // ms
+
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    diff %= 1000 * 60 * 60;
+
+    const minutes = Math.floor(diff / (1000 * 60));
+    diff %= 1000 * 60;
+
+    const seconds = Math.floor(diff / 1000);
+
+    return `${hours} hr : ${minutes} min : ${seconds} sec`;
+};
