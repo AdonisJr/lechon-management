@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server';
 import connectToDatabase from '@/app/lib/mongodb';
-import Order from '@/app/models/Order';
-import User from '@/app/models/User';
 import LechonSlot from '@/app/models/LechonSlot';
 import jwt from 'jsonwebtoken';
 
-// GET /api/orders/[id] - Get a specific order
+// GET /api/lechon_slot/[id] - Get a specific lechon slot
 export async function GET(request, { params }) {
   try {
     // Verify authentication
@@ -20,28 +18,21 @@ export async function GET(request, { params }) {
     await connectToDatabase();
 
     const { id } = await params;
-    const order = await Order.findById(id).populate('createdBy', 'name email').populate({
-        path: 'slotId',
-        select: 'name status type capacity currentOrders',
-        model: 'LechonSlot',
-        populate: {
-            path: 'currentOrders',
-            select: '_id'
-        }
-    });
+    const slot = await LechonSlot.findById(id)
+        .populate('currentOrders', '_id');
 
-    if (!order) {
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+    if (!slot) {
+      return NextResponse.json({ error: 'Lechon slot not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ order });
+    return NextResponse.json({ slot });
   } catch (error) {
-    console.error('Get order error:', error);
+    console.error('Get lechon slot error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-// PUT /api/orders/[id] - Update an order
+// PUT /api/lechon_slot/[id] - Update a lechon slot
 export async function PUT(request, { params }) {
   try {
     // Verify authentication
@@ -61,40 +52,23 @@ export async function PUT(request, { params }) {
     // Remove fields that shouldn't be updated directly
     delete updateData._id;
     delete updateData.createdAt;
-    delete updateData.createdBy;
 
-    // Convert date strings to Date objects if provided
-    if (updateData.dateReceived) {
-      updateData.dateReceived = new Date(updateData.dateReceived);
-    }
-    if (updateData.dateCooked) {
-      updateData.dateCooked = new Date(updateData.dateCooked);
-    }
+    const updatedSlot = await LechonSlot.findByIdAndUpdate(
+        id,
+        updateData,
+        { new: true, runValidators: true }
+    ).populate('currentOrders', '_id');
 
-    const updatedOrder = await Order.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true, runValidators: true }
-    ).populate('createdBy', 'name email').populate({
-        path: 'slotId',
-        select: 'name status type capacity currentOrders',
-        model: 'LechonSlot',
-        populate: {
-            path: 'currentOrders',
-            select: '_id'
-        }
-    });
-
-    if (!updatedOrder) {
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+    if (!updatedSlot) {
+      return NextResponse.json({ error: 'Lechon slot not found' }, { status: 404 });
     }
 
     return NextResponse.json({
-      message: 'Order updated successfully',
-      order: updatedOrder
+      message: 'Lechon slot updated successfully',
+      slot: updatedSlot
     });
   } catch (error) {
-    console.error('Update order error:', error);
+    console.error('Update lechon slot error:', error);
 
     if (error.name === 'ValidationError') {
       const messages = Object.values(error.errors).map(err => err.message);
@@ -105,7 +79,7 @@ export async function PUT(request, { params }) {
   }
 }
 
-// DELETE /api/orders/[id] - Delete an order
+// DELETE /api/lechon_slot/[id] - Delete a lechon slot
 export async function DELETE(request, { params }) {
   try {
     // Verify authentication
@@ -120,15 +94,15 @@ export async function DELETE(request, { params }) {
     await connectToDatabase();
 
     const { id } = await params;
-    const deletedOrder = await Order.findByIdAndDelete(id);
+    const deletedSlot = await LechonSlot.findByIdAndDelete(id);
 
-    if (!deletedOrder) {
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+    if (!deletedSlot) {
+      return NextResponse.json({ error: 'Lechon slot not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ message: 'Order deleted successfully' });
+    return NextResponse.json({ message: 'Lechon slot deleted successfully' });
   } catch (error) {
-    console.error('Delete order error:', error);
+    console.error('Delete lechon slot error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

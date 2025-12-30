@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import connectToDatabase from '@/app/lib/mongodb';
 import Order from '@/app/models/Order';
 import User from '@/app/models/User';
+import LechonSlot from '@/app/models/LechonSlot';
 import jwt from 'jsonwebtoken';
 
 // GET /api/orders - Get all orders for the authenticated admin
@@ -123,12 +124,21 @@ export async function GET(request) {
         const page = parseInt(searchParams.get('page')) || 1;
         const limit = parseInt(searchParams.get('limit')) || 30;
         const skip = (page - 1) * limit;
-        const sortField = searchParams.get('sortField') || 'timeCooked';
+        const sortField = searchParams.get('sortField') || 'createdAt';
         const sortDirection = searchParams.get('sortDirection') === 'desc' ? -1 : 1;
 
         const totalOrders = await Order.countDocuments(filter);
         const orders = await Order.find(filter)
             .populate('createdBy', 'name email')
+            .populate({
+                path: 'slotId',
+                select: 'name status type capacity currentOrders',
+                model: 'LechonSlot',
+                populate: {
+                    path: 'currentOrders',
+                    select: '_id'
+                }
+            })
             .sort({ [sortField]: sortDirection })
             .skip(skip)
             .limit(limit);
